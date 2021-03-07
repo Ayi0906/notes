@@ -24,7 +24,7 @@
   }
   ```
   - 样式文件：可以使用HMR功能：因为style-loader内部实现了
-      - 发现问题：开启HMR后，修改css文件后html没有任何改变
+      - 发现问题：开启HMR后，修改css文件后html没有任何改变，因为必须使用`style-loader`
   - js文件：js文件默认没有HMR功能的
     - 修改js代码：添加支持HMR功能的代码
     ```
@@ -87,7 +87,7 @@ devtool:'source-map'
 
 ### cheap-module-source-map 外部
 - 和cheap-source-map一样
-- module会将loader的source map加入
+- module会将loader的source-map加入
 
 ### 生产环境和开发环境对于source-map的不同选择
 - 开发环境：速度快，调试友好（即可以直接跳转到源文件出错位置）
@@ -107,3 +107,95 @@ devtool:'source-map'
 
 ### 总结
 - inline/hiddent/eval - nosources/cheap/cheap-module - source-map
+- source-map:外联，提供错误信息以及源代码错误位置，允许查看源代码
+- inline-source-map:内联，提供错误信息以及源代码错误位置，允许查看源代码。
+- eval-source-map:内联，提供错误信息以及源代码错误位置，允许查看源代码。
+- hidden-source-map:外联，提供错误信息以及构建后代码错误位置，不允许查看源代码，允许查看构建后代码。
+- nosources-source-map:外联，提供错误信息以及源代码错误位置，不允许查看源代码，允许查看构建后代码。(也就是说几乎无法定位问题的所在)
+- cheap-source-map:外联，提供错误信息以及源代码错误位置，允许查看源代码。但是错误只定位到行，通过牺牲调试的精确性来获得更快的打包速度。
+- cheap-module-source-map:
+- 开发环境:要求构建速度快，方便调试：eval-source-map(兼容两项需求),eval-cheap-module-source-map(速度最快)
+- 生产环境:要求外联，要求源代码隐藏：hidden-source-map(保留一点调试功能),nosource-source-map(不需要调试，要调试按照错误信息自己去编辑器找相应源代码)
+
+
+## 20_oneOf
+- 我们在modules.rules中写入了多个对象，每一个都有一个test属性，那么index.js中引入的全部文件都需要在每一个对象中一个一个去测试，即便测试命中以后，剩下的一会继续测试。浪费时间。
+（每个不同类型的文件在loader转换时，都会被命中，遍历module中rules中所有loader）
+- 比如modules.rules.length==10,index.js中有10个文件，那么就需要匹配100次。
+
+```
+modules：{
+  rules:[
+    {
+      oneOf:[
+        // 所有只匹配一次的全部放在这里面
+        // 按照上面的测试，会比100次少很多，因为匹配一次后就不再匹配其它的了
+        // 注意：不能有两项loader同时处理同一类型的文件
+      ]
+    }
+  ]
+}
+```
+
+- 对于`babel-loader`以及`eslint-loader`这种处理js文件的loader，可以将`eslint-loader`提取到外面去。
+
+## 21_缓存
+- 例如：有1000个js文件，只更新一个js文件，那么其它999个应该是不变的，类似于HMR功能。但生产环境下不能使用HMR功能，因为HMR基于devserver。
+
+
+### babel缓存
+```
+{
+  test:/\.js$/,
+  exclude:/node_modules/,
+  loader:'babel-loader',
+  options:{
+
+  },
+  // 开启babel缓存
+  // 第二次构建时，会读取之前的缓存
+  cacheDirectory:true
+}
+```
+- 好像完全没用，我修改js文件完全不搭理我
+- 让第二次构建速度更快，经测试的确快了300ms
+
+### 文件资源缓存
+- 让代码上线后，用户第二次浏览时可以快速打开
+- hash:每次webpack构建时会生成一个唯一的hash值
+  - 问题：因为js和css同时使用一个hash值，如果重新打包，会导致所有缓存失效（很可能我只修改了一个文件）
+
+- chunkhash
+  - 根据chunk生成的hash值，如果打包来源于同一个chunk，那么hash值就一样
+    - 问题：js和css的hash值还是一样的，因为css是在js中被引入的，所以同属于一个chunk
+- contenthahs：根据文件内容生成hash值，不同文件hash值一定不一样
+
+### 过程
+- 写入一个常用的开发配置，打包文件生成css文件和js文件
+- 创建一个服务器文件:`server.js`,代码如下
+```
+const express = require('express');
+
+const app = express();
+
+app.use(express.static('dist', {
+    maxAge: 1000 * 3600
+}));
+
+app.listen(3000,()=>{
+    console.log('服务器启动成功');
+});
+```
+- `127.0.0.1:3000`打开文件，在`Network`中可以看到三个文件：==127.0.0.1==,==a3bee10e18.css==,==bundle.js==
+- 在css文件和js文件中的`Headers`都可以看到`Cache-control:public,max-age=3600`字样，代表它们的缓存是一个小时
+- 再次刷新可以看到在`Network`中的文件对应的size中标注的是(memory cache)
+- 修改js文件，发现js文件的输出完全没变，js的size对应的依然是（memory cache），令人疑惑的是css文件改变了(右键在集成终端中打开可以在不重启服务器的情况下重新打包)
+- 修改css文件，重新打包后会更改。（我怀疑是老师使用的是`style-loader`但我使用的是`Minicssextractplugin.loader`的原因）
+  - ==补充：是因为我本身的css文件就使用了hash值，所以只要css文件更改，css打包后的文件必然重新更改，因为引入完全不一样了==
+- 给打包后的js和css文件名添加hash值。但是修改js文件后发现js和css文件全部被更新。
+  - 注意到了使用这种方法js文件和css文件的hash值都是一样的
+- 使用chunkhash值：格局chunk生成的hash值，如果打包来源于同一个chunk，这hash值一样。但它俩还是一样。
+```
+[chunkhaah:10]
+```
+- contenthash:根据文件的内容生成hash值，不同文件hash值不同。
