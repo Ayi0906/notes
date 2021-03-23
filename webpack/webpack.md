@@ -199,3 +199,42 @@ app.listen(3000,()=>{
 [chunkhaah:10]
 ```
 - contenthash:根据文件的内容生成hash值，不同文件hash值不同。
+
+## tree shaking
+- 树摇，将绿叶保留，枯叶摇落
+- 目的： 去除无用代码
+    - 前提：1.必须使用ES6模块
+    - 2.开启production模式
+- 在js文件内写入`foo`,`bar`两个函数，暴露它们，在`index.js`中引入`foo`函数。打包后会发现打包后的js代码里只有`foo`函数没有`bar`函数
+- 作用：减少代码体积 
+- 可能出现的问题：可能将css文件是识别为未使用代码给干掉。
+    - 在`package.json`中配置："sideEffects":false,(所有代码都没有副作用)
+      - 问题：可能会把css/@babel/polyfill给干掉
+    - 修改为："sideEffects":["*.css"]
+    - 还可以：”sideEffects":["*.css","*.less"]  代表css文件和less文件没有副作用
+
+## code split(代码分割)
+
+### 多入口
+- 修改entry
+  - ```entry:{
+    main:'./src/js/index.js,
+    test:'./src/js/test.js
+  }```
+- 修改output
+  - ```output:{
+    filename:['js/[name].[contenthash:10].js'],
+    path:join(__dirname,'/dist')```
+
+### 单入口
+```
+/* 1.可以将node_modules中代码单独打包成一个chunk最终输出，
+2.会自动分析多入口文件中有没有公共的依赖（大小是有要求的，1kb不行），如果有会打包成一个单独的chunk */
+entry:'./src/js/index.js',
+output:{...},
+optimization:{
+  splitChunks:{
+    chunks:'all'
+  }
+}
+```
