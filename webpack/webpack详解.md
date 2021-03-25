@@ -110,4 +110,35 @@ clientLogLevel:'none'
 quiet:true,
 // 如果出错了，不要全屏提示
 overlay:false
+// 服务器代理-->解决开发环境跨域问题
+proxy:{
+	// 一旦devServer（5000）服务器接受到 /api/xxx 的请求，就会把请求转发到另外一个服务器
+    '/api':{
+    	target:'http://localhost:3000',
+        // 发送请求时，请求路径重写，将/api/xxx --> /xxx (去掉/api)
+        pathRewrite:{
+        	'^/api':''
+        }
+    }
+}
+```
+
+## optimization
+```
+optimization:{
+	splitChunks:{
+    	chunks:'all',
+        minSize:30*1024, // 分割的chunk最小为30kb
+        maxSize: 0, // 最大没有限制
+        minChunks:1, // 要提取的chunk最少被引用一次
+        maxAsyncRequests:5, // 按需加载时并行加载的文件的最大数量
+        maxInitialRequests:3, // 入口js文件最大并行请求数量
+        automaticNameDelimiter:'~', // 名称连接符
+        name:true, // 可以使用命名规则
+        cacheGroups:{
+        	// 分割chunk的组
+            // node_modules会被打包到
+        }
+    }
+}
 ```
