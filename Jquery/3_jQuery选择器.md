@@ -89,5 +89,5 @@ if($('#app')[0]){}
 - /radio/checkbox/submit/image/reset/button/file/hidden
 
 ## 一些版本遗留问题
-- 在jQuery1.1.0版本中属性选择器前需要加@符号
+- 在jQuery1.3.1以下版本中属性选择器前需要加@符号，但1.3.1版本以上废弃掉了这个符号
   - `$('div[@title=test]')`
