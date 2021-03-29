@@ -281,3 +281,26 @@ $('#ul1>li:eq(0)').siblings().attr('title'); // b
 $('#ul1>li:eq(0)').closest('li')[0]; // <li title="a">aaa</li>
 $('#ul1>li:eq(0)').closest('ul')[0]; // <ul id="ul1"></ul>
 ```
+- parent\parents\closest的区别
+  -  parent获取距离选取的元素最近的父元素。
+  -  parents获取所选取元素的所有祖先元素，传入参数可以指定选取一个类型的祖先元素
+  -  closest获取距离选取元素最近的祖先元素，从它自己本身开始算起，同时接收参数用以筛选。
+
+## CSS-DOM操作
+- `css()`方法
+  - 直接利用`css()`方法获取元素的样式属性
+    - `$('p').css('color');`
+  - 设置元素的属性
+    - `$('p').css({"fontSize":"30px","backgroundColor":"red"});`
+- `height()`方法
+  - 获取元素的高度
+    - `$('p').height();`
+    - 与`$(element).css("height")`的区别在于，`height()`方法获取的是计算值，以px为单位。`css()`方法获取的是样式表的属性值，可能是auto之类的值。 
+  - 设置元素的高度
+    - `$('p').height(100)`:设置p元素的高度为100px
+    - `$('p').height("10em")`:设置p元素高度为10em
+- `width()`方法
+  - 与`height()`方法一致
+- `offset()`方法
+- `position()`方法
+- `scrollTop()`方法与`scrollLeft()`方法 
