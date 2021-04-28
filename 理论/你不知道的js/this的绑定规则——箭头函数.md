@@ -52,3 +52,17 @@
         };
         foo.call(obj); // 7
 ```
+```
+        var num = 88;
+        var obj = {
+            num: 77,
+            getNum: function () {
+                var that = this;
+                return function () {
+                    console.log(that.num);
+                }
+            }
+        }
+        obj.getNum()(); // 77
+```
+
