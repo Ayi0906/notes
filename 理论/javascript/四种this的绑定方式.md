@@ -38,6 +38,8 @@
 ## 显式绑定
 
 - 通过`fn.call(obj)`就是显式绑定，除此之外还有apply，bind
+  - call与apply的区别是call的参数是通过逗号间隔的字符串，apply是数组
+- 将null或者undefined作为this的绑定对象传入call，apply或者bind，这些值在调用时会被忽略掉。应用默认绑定规则。
 
 ## new绑定
 
