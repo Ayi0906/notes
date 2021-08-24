@@ -1,0 +1,4 @@
+- xml是非常麻烦的，标签套标签，且数据格式非常大
+- 在前端json串的格式就是对象或者对象的数组
+- JSON.stringify()
+- JSON.parse()

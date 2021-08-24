@@ -1,0 +1,16 @@
+- getFullYear()
+- getMonth()
+  - month从0开始计算
+- getDate()
+- getHours()
+- getMinute()
+- getSeconds()
+- getYear()
+- toLocalTimeString()
+  - 当地时间（时分秒）字符串
+  - ''下午4:38:04'
+- toLocalDateString()
+  - 当地日期字符串
+  - 2019/8/24
+- getTime() 
+  - 到1970年1月1日的毫秒数

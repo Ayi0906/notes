@@ -1,0 +1,1 @@
+- round(),floor(),random(),ceil(),max(),min(),PI.pow()
