@@ -174,9 +174,11 @@
 ## 四种this的绑定方式
 
 - 默认绑定
+
   - 通过`fn()`这种方式调用的就是默认绑定。默认绑定在非严格模式下绑定到window对象上。
 
 - 隐式绑定
+
   - 通过`obj.fn()`方式绑定的就是隐式绑定。
 
   - 隐式丢失：
@@ -205,18 +207,21 @@
     ```
 
 - 显式绑定
+
   - 通过`fn.call(obj)`就是显式绑定，除此之外还有apply，bind
     - call与apply的区别是call的参数是通过逗号间隔的字符串，apply是数组
   - 将null或者undefined作为this的绑定对象传入call，apply或者bind，这些值在调用时会被忽略掉。应用默认绑定规则。
 
 - new绑定
+
   - 通过`obj = new fn()`方式调用。this绑定在obj上。
 
 ## 调用new发生了什么
 
-
-
-- 
+- 创建一个空对象
+- 将this值指向这个空对象
+- 执行函数
+- 将执行结果返回
 
 ## call，apply，bind的区别
 
@@ -241,12 +246,12 @@
 ## offsetWidth / offsetHeight / offsetLeft / offsetTop / offsetParent
 
 - `offsetWidth`获取元素的`width + padding + boder`的值
-    - 如果一个元素设置为`box-sizing:border-box;`那么`width:200px`的元素的`offsetWidth`不管怎么设置都是200px。
+  - 如果一个元素设置为`box-sizing:border-box;`那么`width:200px`的元素的`offsetWidth`不管怎么设置都是200px。
 - `offsetHeight`获取元素的`height + padding + border`的值，参上。
 - `offsetLeft`/`offsetTop`获取相对于包围元素的偏移，即左边距，右边距。
 - `offsetParent`是相对于包含元素的，但是包含元素不一定是`parentNode`
-    - 比如`td`的相对于`table`偏移，因为table是节点层级中第一个提供尺寸的。
-    - 比如我写两个包含div，没有进行任何定位，里面的那个div的`offsetParent`是`body`。
+  - 比如`td`的相对于`table`偏移，因为table是节点层级中第一个提供尺寸的。
+  - 比如我写两个包含div，没有进行任何定位，里面的那个div的`offsetParent`是`body`。
 
 ## 箭头函数和普通函数的区别
 
@@ -257,6 +262,12 @@
 ## web storage和cookie的区别
 
 ## 实现继承的方式
+
+### 原型链继承
+
+### 借用构造函数继承
+
+### 组合继承
 
 ## 讲一讲http
 
@@ -275,11 +286,58 @@
   - sessionStorage和localStorage 虽然也有存储大小的限制，但比cookie大得多，可以达到5M或更大。
 
   2.有效时间
+
   - localStorage   存储持久数据，浏览器关闭后数据不丢失除非主动删除数据；
   - sessionStorage  数据在当前浏览器窗口关闭后自动删除。
   - cookie      设置的cookie过期时间之前一直有效，即使窗口或浏览器关闭
 
   3.数据与服务器之间的交互方式
+
   - cookie的数据会自动的传递到服务器，服务器端也可以写cookie到客户端
   - sessionStorage和localStorage不会自动把数据发给服务器，仅在本地保存。
+
+## 原型对象与原型链
+
+- 每一个函数都有一个prototype属性，它指向的是原型对象（显式原型对象）。么一个实例对象身上都有一个`__proto__`属性同样指向原型对象（隐式原型对象）。原型对象的本质是Object构造函数的实例对象。
+
+- 查找对象的属性时，首先在对象本身寻找这个属性，如果不存在，则沿着`__proto__`找原型对象里是否存在这个属性。一直找到Object原型对象null为止。如果未找到，则返回undefined。沿着`__proto__`查找的这条链就是原型链。
+
+## 原型链笔试题
+
+### 1
+
+```
+        var A = function () {
+
+        }
+        A.prototype.n = 1
+        var b = new A()
+
+        A.prototype = {
+            n: 2,
+            m: 3
+        }
+        var c = new A()
+        console.log(b.n, b.m, c.n, c.m) // 1 undefined 2 3
+```
+
+- 重写原型对象只是修改之后新建的实例对象的`__proto__`指向。但已经被创造的实例对象的`__proto__`的指向并没有改变。原来的原型对象并没有消失。
+
+```
+        var F = function () {}
+        Object.prototype.a = function () {
+            console.log('a()')
+        }
+
+        Function.prototype.b = function () {
+            console.log('b()')
+        }
+        var f = new F()
+        f.a() // 'a()'
+        // f.b() // not a function
+        F.a() // 'a()'
+        F.b() // 'b()'
+```
+
+- 函数的原型对象是Object构造函数的实例，因此存在`__proto__`指向Object.prototype。函数实例是可以访问构造函数原型对象的属性的
 
