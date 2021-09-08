@@ -273,7 +273,7 @@
 
 ## 手写promise
 
-## 请描述一下 cookies sessionStorage和localstorage区别**
+## 请描述一下 cookies sessionStorage和localstorage区别
 
 - 相同点：都存储在客户端
 
