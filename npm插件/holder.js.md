@@ -19,7 +19,7 @@
 
   - 在指定区域使用
 
-    - ```
+    - ```html
           <div id="test"></div>
           <script>
               Holder.addTheme("new", {
@@ -32,7 +32,7 @@
 
   - 使用百分比为单位
 
-    - ```
+    - ```html
           <style>
               img {
                   width: 100%;
@@ -49,28 +49,33 @@
 
     - `50px200`中的p代表百分比符号
 
+  - auto:使占位图片自动适应宽高比
+
+    - `<img alt="" data-src="holder.js/500x500?auto=yes">`
+    - 需要搭配css设置`img{width:100%;}`,才能使图片按照css的设置,根据500x500(1:1)的横纵比放大缩小
+  
   - theme:设定holderjs主题配色:sky,vine,lava,gray,industrial,social
-
+  
     - `<img src="" alt="" data-src="holder.js/200x200?theme=sky">`
-
+  
   - random:设定随机主题色
-
+  
     - `<img src="" alt="" data-src="holder.js/200x200?random=yes">`
-
+  
   - outline:画出图片轮廓和对角线的占位符
-
+  
     -  `<img src="" alt="" data-src="holder.js/200x200?outline=yes">`
-
+  
   - 参数
-
+  
     - bg:背景颜色
     - fg:字体颜色
     - text:文本,如果需要换行加上` \n `,注意` \n `的两边有空格
       - `<img src="" alt="" data-src="holder.js/200x200?text=hello \n world">`
-
+  
   - 自定义图片主题
-
-    - ```
+  
+    - ```javascript
           <img src="" alt="" data-src="holder.js/200x200?theme=diy">
           <script>
               Holder.addTheme('diy', {
@@ -83,5 +88,7 @@
               })
           </script>
       ```
-
-      
+  
+  - 2021.11.15补充:
+  
+    - holder.js不能用setTimeout等方式延迟加载, 不会重新渲染图片

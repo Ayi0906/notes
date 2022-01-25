@@ -10,7 +10,7 @@
 
 - 兼容性案例：
 
-  - ```
+  - ```javascript
             function setOrGetContent(obj, value) {
                 if (arguments.length === 2) {
                     // 设置obj的文本
@@ -39,7 +39,7 @@
 
 - 通过检测nodeType来获取元素的第一个子元素
 
-- ```
+- ```javascript
           function getFirstEle(obj) {
               if (obj.firstElementChild) {
                   return obj.firstElementChild
@@ -59,7 +59,7 @@
 - DOM0级事件处理程序(onclick)可以适用于任何浏览器
 - IE事件处理程序`attachEvent`
 
-```
+```javascript
         var EventUtil = {
             addHandler: function (element, type, handler) {
                 if (element.addEventListener) {
