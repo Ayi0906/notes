@@ -1,0 +1,98 @@
+{
+  "main": {
+    "id": "5365432ebea9d32a",
+    "type": "split",
+    "children": [
+      {
+        "id": "e1b32870030d31ba",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "2020年课件/js高级/3-剩下的全部.md",
+            "mode": "preview",
+            "source": false
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "835c59e3677b245e",
+    "type": "split",
+    "children": [
+      {
+        "id": "1bd51cbe7b1f4d2b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7eb85158168129d0",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "b41abbfa6f4745ea",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d9a840c5d8c0a130",
+    "type": "split",
+    "children": [
+      {
+        "id": "6a984f18fbc45611",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fd8c18d591b1bb74",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "2020年课件/js高级/3-剩下的全部.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "e1b32870030d31ba",
+  "lastOpenFiles": [
+    "2020年课件/js高级/3-剩下的全部.md",
+    "2020年课件/js高级/2-基本知识回顾.md",
+    "2020年课件/js高级/1-chrome插件安装.md",
+    "2020年课件/less/all.md",
+    "2020年课件/移动端开发/12.6canvas.md"
+  ]
+}
