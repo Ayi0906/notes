@@ -1,11 +1,152 @@
 [Toc]
 
+# 二十一 组件与复用
+
+## 21.1 全局注册组件的方法
+
+1. 全局注册
+
+```javascript
+Vue.component('my-component',{ 
+	template:'<div>这是组件的内容</div>' 
+})
+```
+
+2. 在Vue实例对象中使用
+
+```html
+<div id="app">
+    <my-component></my-component>
+</div>
+```
+
+3. 备注
+   1. vue2.x中必须有一个根节点,可以是`div`也可以是其它元素, 如果只有一个元素可以直接写
+
+## 21.2 局部注册组件的方法
+
+1. 注册及使用
+
+```html
+<div id = "app">
+    <my-component></my-component>
+</div>
+```
+
+```javascript
+<script>
+    var child={
+        template:'<div>局部注册组件的内容</div>'
+    }
+	var app=new vue({
+        components:{
+            'my-component':child // 接收一个带template属性的对象
+        }
+    }).$mount('#app')
+</script>
+```
+
+
+
+# 二十二 使用props传递数据
+
+
+
+# 二十三 单项数据流
+
+
+
+# 二十四 数据验证
+
+
+
+# 二十五 组件通信
+
+
+
+# 四十六 组件间通信_slot插槽
+
+1. 父组件向子组件通信方式
+2. 与props的区别: props传递数据, slot传递标签
+
+## 46.1 使用方法
+
+1. 在组件模板中通过`<slot name="[插槽名称]">`定义插槽,以Header.vue为例
+
+```html
+<template>
+    <div>
+    	<slot name="top"></slot>
+		<slot name="middle"></slot>
+        <slot name="bottom"></slot>
+	</div>
+</template>
+```
+
+
+
+2. 在父组件中使用该子组件,通过`<标签 slot="[插槽名称]"></标签>`来替换
+
+```html
+<template>
+	<Header>
+    	<span slot="top">hello world</span>
+        <div slot="middle">
+            <input type="text">
+            <input type="password">
+        </div>
+        <div slot="bottom">
+            <p>
+             	@copyright   
+            </p>
+            <p>
+                lorem25
+            </p>
+        </div>
+    </Header>
+</template>
+```
+
+3. 总结
+
+   1. 对于组件来说, 只要直接使用`<Header></Header>`就可以在那里引入全部的Header组件的模板
+
+   2. 所以如果在一个模板标签内写入的其它标签,必然是slot插槽的值
+
+   3. 3.13补充:
+
+      1. `<slot>`标签本身不可以写类名, 因为它只是一个位置标识
+
+      ```html
+              <slot name="left"></slot>
+              <span class="header_title">
+                  <!-- 显示不下予以省略 -->
+                  <span class="header_title_text ellipsis">{{ title }}</span>
+              </span>
+              <slot name="right"></slot>
+      ```
+
+      2. App.vue父组件中引入子组件, 再设置类名
+
+      ```vue
+              <Header :title="'正在定位中'">
+                  <span slot="left" class="header_search">
+                      <i class="iconfont icon-search"></i>
+                  </span>
+                  <span slot="right" class="header_login">
+                      <span class="header_login_text">登录 | 注册</span>
+                  </span>
+              </Header>
+      ```
+
+      3. 样式文件不可以写在App.vue中,只能写在Header.vue中
+
 ## .vue单文件的stylus预编译移动端适配
 
 ### 1.将stylus预编译文件写在.vue文件内的`<style>`标签内
 
 - ```javascript
-  <style lang="">
+  <style scoped lang="stylus" rel="stylesheet/stylus">
   ```
 
 ### 2.vue脚手架中使用第三方库适配

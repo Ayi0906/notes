@@ -1,6 +1,6 @@
 [Toc]
 
-# 1.创建项目
+# 1 创建项目
 
 - `vue create [projectName]` // 这里创建的是vue2.x的项目
 
@@ -119,7 +119,7 @@
     },
     ```
 
-# 2.创建项目_移动端适配
+# 2 创建项目_移动端适配
 
 ## 2.1 安装`postcss-px2rem` 和`lib-flexible`
 
@@ -318,8 +318,8 @@ src
 		| --- FooterGuide ----------------------------- 底部组件文件夹
 			| --- FootGuide.vue ----------------------------- 底部组件 vue
 	| --- pages ----------------------------- 路由组件文件夹
-		| --- Msite ----------------------------- 首页组件文件夹
-			| --- Msite.vue ----------------------------- 首页组件 vue
+		| --- MSite ----------------------------- 首页组件文件夹
+			| --- MSite.vue ----------------------------- 首页组件 vue
 		| --- Search ----------------------------- 搜索组件文件夹
 			| --- Search.vue ----------------------------- 搜索组件 vue
 		| --- Order ----------------------------- 订单组件文件夹
@@ -329,5 +329,348 @@ src
 			
 	| --- App.vue ----------------------------- 应用根组件 vue
 	| --- main.js ----------------------------- 应用入口
+```
+
+## 3.4 配置路由
+
+1. 安装
+   1. `npm i vue-router@3.5.3`(vue2.x只能搭配3.5.3版本)
+
+2. 按照上面的组件结构创建目录
+
+3. 创建router目录存放路由
+
+   1. ```
+      src
+      	| --- router ----------------------------- 路由组件文件夹
+      		| --- index.js ----------------------------- 向外暴露的路由器模块
+      		| --- router.js ----------------------------- 存放并暴露路由数组
+      ```
+
+   2. index.js
+
+      1. ```javascript
+         /* 
+             向外暴露路由器模块
+         */
+         
+         import Vue from 'vue'
+         import VueRouter from 'vue-router'
+         // 引入路由组件
+         import routes from './router'
+         // 声明使用vue插件
+         Vue.use(VueRouter)
+         export default new VueRouter({
+             mode: 'history', // 路由路径没有#
+             routes,
+         })
+         ```
+
+   3. router.js
+
+      1. ```javascript
+         /* 
+             路由配置的数组
+         */
+         
+         // 引入路由组件
+         import MSite from '@/pages/MSite/MSite.vue'
+         import Search from '@/pages/Search/Search.vue'
+         import Order from '@/pages/Order/Order.vue'
+         import Profile from '@/pages/Profile/Profile.vue'
+         export default [
+             { path: '/msite', component: MSite },
+             { path: '/search', component: Search },
+             { path: '/order', component: Order },
+             { path: '/profile', component: Profile },
+             { path: '/', redirect: '/msite' },
+         ]
+         ```
+
+   4. App.vue测试路由
+
+      1. main.js
+
+         1. ```javascript
+            import Vue from 'vue'
+            import App from './App.vue'
+            import 'lib-flexible'
+            import router from './router'
+            
+            Vue.config.productionTip = false
+            
+            new Vue({
+                render: (h) => h(App), // components和template的方法需要额外在vue.config.js上配置
+                router, // 所有组件都能看到$router和$route <router-link> 和 <router-view>
+            }).$mount('#app')
+            ```
+
+      2. App.vue
+
+         1. ```vue
+            <template>
+                <div>
+                    <router-view></router-view>
+                    <FooterGuide></FooterGuide>
+                </div>
+            </template>
+            
+            <script>
+                import FooterGuide from '@components/FooterGuide/FooterGuide.vue'
+            
+                export default {
+                    name: 'App',
+                    components: {
+                        FooterGuide,
+                    },
+                }
+            </script>
+            ```
+
+4. 测试路由
+
+   1. 在`http://localhost:8080/msite`中测试路由`/profile`,`/order`,`search`
+
+
+
+# 4 footerGuide组件
+
+## 4.1 `src/assets/stylus/mixin.styl`文件
+
+```stylus
+$green = #02a774
+$yellow = #f5a100
+$bgc = #e4e4e4
+// 一像素边框
+bottom-border-1px($color)
+    position relative
+    border none
+    &::after
+        content ''
+        position absolute
+        left 0
+        bottom 0
+        width 100%
+        height 1px
+        background-color $color
+        transform scaleY(0.5)
+// 一像素上边框
+top-border-1px($color)
+    position relative
+    &::before
+        content ''
+        position absolute
+        z-index 200
+        left 0
+        top 0
+        width 100%
+        height 1px
+        background-color $color
+// 根据像素比缩放1px像素边框
+@media only screen and (-webkit-device-pixel-ratio 2)
+    .border-1px
+        &::before
+            transform scaleY(0.5)
+@media only screen and (-webkit-device-pixel-ratio 3)
+    .border-1px
+        &::before
+            transform scaleY(0.333333)
+// 根据像素比来实现 2X图 3X图
+bg-image($url)
+    background-image url($url + '@2x.png')
+    @media (-webkit-device-pixel-ratio 3), (min-device-pixel-ratio 3)
+        background-image url($url + '@3x.png')
+// 清除浮动
+clearFix()
+    &::after
+        content ''
+        display block
+        clear both
+```
+
+## 4.2 FooterGuide组件
+
+```vue
+<template>
+    <div class="footer-guide">
+        <span class="guide-item" :class="{on: $route.path==='/msite'}" @click="goto('/msite')">
+            <span>
+                <i class="iconfont icon-home"></i>
+            </span>
+            <span>首页</span>
+        </span>
+        <span class="guide-item" :class="{on: $route.path==='/search'}" @click="goto('/search')">
+            <span>
+                <i class="iconfont icon-search"></i>
+            </span>
+            <span>搜索</span>
+        </span>
+        <span class="guide-item" :class="{on: $route.path==='/order'}" @click="goto('/order')">
+            <span>
+                <i class="iconfont icon-order"></i>
+            </span>
+            <span>订单</span>
+        </span>
+        <span class="guide-item" :class="{on: $route.path==='/profile'}" @click="goto('/profile')">
+            <span>
+                <i class="iconfont icon-account"></i>
+            </span>
+            <span>我的</span>
+        </span>
+    </div>
+</template>
+
+<script type="text/ecmascrspanpt-6">
+    export default {
+        name: 'FooterGuide',
+        data() {
+            return {
+
+            }
+        },
+        methods:{
+            goto(path){
+                this.$router.replace(path)
+            }
+        },
+        components: {
+
+        }
+    }
+</script>
+
+<style lang="stylus" rel="stylesheet/stylus" scoped>
+    // 没有路径提示, 包括老师写的都没有
+    @import '../../assets/stylus/mixins.styl'
+    .footer-guide
+        top-border-1px(#cccccc)
+        position  fixed
+        height 50px
+        left: 0
+        bottom 0
+        width 100%
+        display flex
+        align-items  center
+        justify-content  space-between
+        .guide-item
+            display: flex
+            flex-direction: column
+            width: 25%
+            text-align: center
+            &.on
+                color $green
+            span
+                margin-top: 3px
+                font-size 12px
+                i
+                    font-size 22px
+
+</style>
+
+```
+
+## 4.3 index.html引入iconfont项目链接
+
+- 在iconfont网站添加图标到项目,然后生成链接引入到html文件中
+
+- ```html
+  <link rel="stylesheet" href="http://at.alicdn.com/t/font_3239724_54jjozw3nd6.css">
+  ```
+
+## 4.4 vue文件中@import没有路径提示
+
+- 尚待解决, 视频里老师也没有路径提示
+
+
+
+# 5 使用git管理项目
+
+## 5.1 基于本地项目创建git仓库
+
+1. `git init`创建仓库
+2. `git add.`添加到暂存区
+3. `git commit -m ''`提交到版本区
+4. `git remote add origin [远程仓库地址]`设置远程仓库
+5. `git push origin master`推送到远程仓库 // 虽然政治正确更改为了main,但是命令还是master // 3.11更新:好像改回来了
+6. `git branch`查看本地分支
+7. `git checkout -b my`创建新分支my并跳转到my分支
+8. `git push origin my`推送到远程my分支(后面开发都在my分支开发)
+9. `git checkout master`切换到master分支,先切换才能合并
+10. `git merge my`合并my分支到master
+11. `git push origin master`再次推送到远程master分支
+12. `git pull origin my`用于其他开发者修改代码后从远程仓库下载到本地
+13. `git clone [仓库地址]`下载远程仓库文件到本地,下载所有分支到本地, 但是只有master分支默认存在(`git branch`只显示master)
+    1. `git checkout -b my origin/my`创建一个my分支对应远程仓库的my分支
+    2. 瞬间完成,不需要额外下载代码
+
+# 6 导航路由组件_静态
+
+
+
+# 7 Header组件_props与slot
+
+## 7.1 Header组件要求
+
+- ```
+  整体
+  	背景色 #02a774
+  	位置固定顶部
+  	宽 100%
+  	高 45px
+  左
+  	距整体左边界15px
+  	垂直居中
+  	宽 10%
+  	高 50%
+  中
+  	容器水平垂直居中
+  	宽 50%
+  	字体颜色 #fff
+  	容器内部字体水平居中
+  ```
+
+## 7.2 Header组件的编写
+
+<img src="C:\Users\董磊\AppData\Roaming\Typora\typora-user-images\image-20220313210800728.png" alt="image-20220313210800728" style="zoom:200%;" />
+
+1. 因为多个组件使用, 所以不再一个一个引入了, 直接在main.js中引入作为全局组件
+
+```js
+/* 注册全局组件 */
+import Header from '@components/Header/Header.vue'
+Vue.component('Header', Header)
+```
+
+2. 在MSite.vue, Order.vue ,Pprofile.vue, Search.vue等组件中直接使用`<Header>`组件
+
+```html
+        <Header :title="'正在定位中'">
+            <span slot="left" class="header_search">
+                <i class="iconfont icon-search"></i>
+            </span>
+            <span slot="right" class="header_login">
+                <span class="header_login_text">登录 | 注册</span>
+            </span>
+        </Header>
+```
+
+```vue
+        <Header title="订单"></Header>
+```
+
+```vue
+        <Header title="个人中心"></Header>
+```
+
+```vue
+        <Header title="搜索"></Header>
+```
+
+3. 问题: vue-router 连续点击同一路由报错(路由冗余), 在footerGuide.vue中修改goto方法如下
+
+```js
+        goto (path) {
+            this.$router.replace(path).catch(err => { })
+        }
 ```
 
