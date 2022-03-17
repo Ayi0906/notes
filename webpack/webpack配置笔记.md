@@ -760,7 +760,7 @@ module.exports={
         })
     ]
 }
-``` 
+```
 - 注意: 能够打包html中的`<img src>`引入的图片是因为前面已经写好了图片打包逻辑, 通过在配置中继续写入对字体,音视频的打包支持, 也可以打包html中的`<video src>`和`<audio src>`
 
 ### webpack.config.js全部配置
@@ -1766,7 +1766,6 @@ module.exports = {
 - 下载serve: `npm i serve -g`
 - 执行生产打包, 生成dist打包文件夹
 - 调用命令: `serve -s dist -p 5000`, 在`127.0.0.1:5000`中测试能否顺利打开文件, 资源引入是否成功
-
 
 
 

@@ -214,6 +214,8 @@
 
 - `[5步解决移动设备上的300ms点击延迟 - Van小时 - 博客园 (cnblogs.com)](https://www.cnblogs.com/vanstrict/p/5700957.html)`
 
+- [别再使用fastclick了 - 掘金 (juejin.cn)](https://juejin.cn/post/6844904168092614670)
+
 # 3.搭建整体路由界面
 
 ## 3.1 项目源码目录设计
@@ -673,4 +675,36 @@ Vue.component('Header', Header)
             this.$router.replace(path).catch(err => { })
         }
 ```
+
+# 8 login组件_meta
+
+## 8.1 完成login组件的静态页面
+
+## 8.2 使用路由元信息使<FooterGuide>根据路由的不同而显示
+
+1. 逻辑
+
+   1. 只有在/profile, /msite,/order,/search 等界面才显示<footerGuide>, 在/login路由不显示
+
+2. meta
+
+   1. 在路由定义文件中, 除path,component外添加meta对象
+
+      1. ```js
+             {
+                 path: '/msite',
+                 component: MSite,
+                 meta: {
+                     isShowFooter: true,
+                 },
+             },
+         ```
+
+   2. 在vue组件中通过`$route.meta.isShowFooter`来访问自定义的数据
+
+      1. ```vue
+                 <FooterGuide v-show="$route.meta.isShowFooter"></FooterGuide>
+         ```
+
+# 9 使用Swiper实现静态组件轮播
 
