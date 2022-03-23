@@ -8,3 +8,4 @@
 7. github->setting
    1. 搜索ssh->SSH and GPG keys
    2. NEW SSH KEY 添加新的ssh公钥
+   3. 输入命令`ssh -T git@github.com`测试配置是否成功
