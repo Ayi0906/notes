@@ -58,3 +58,20 @@
     ```
 
 - 解决: 删掉"maintained node versions"
+
+
+
+# 4 .vue文件的适配要放在rules最前面
+
+- > Make sure the rule matching .vue files include vue-loader in its use.
+
+- 报这个错误是因为下面的代码没有放在rules的最前面
+
+  - ```js
+                /* 打包.vue文件, 这个规则要写在rules的最前面,否则会报 Make sure the rule matching .vue files include vue-loader in its use. 错误 */
+                {
+                    test: /\.vue$/,
+                    loader: 'vue-loader',
+                },
+    ```
+
