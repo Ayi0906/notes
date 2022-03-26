@@ -93,4 +93,25 @@
     }
     ```
 
-  - 
+
+
+# 配置vetur插件
+
+- ```json
+  	/* vutur 配置 */
+  	"vetur.format.options.tabSize": 4,
+  	"vetur.format.options.useTabs": true,
+  	"editor.formatOnSave": true, // 在保存时自动格式化
+  	"vetur.format.defaultFormatterOptions": {
+  		"prettier": {
+  			"semi": false, //不加分号
+  			"singleQuote": true //用单引号
+  		},
+  		/* vue文件中html使用js-beautify-html规则进行格式化, 该配置禁止html标签自动跳行 */
+  		"js-beautify-html": {
+  			"wrap_attributes": "auto"
+  		}
+  	}
+  ```
+
+- 在vscode的setting.json中配置
