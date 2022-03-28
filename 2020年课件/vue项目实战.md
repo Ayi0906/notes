@@ -708,3 +708,179 @@ Vue.component('Header', Header)
 
 # 9 使用Swiper实现静态组件轮播
 
+- 视频里下载的是Swiper@5.2.1
+- https://swiper.com.cn/api/index.html 去这个网站的页面里找swiper5的用法
+- https://swiper.com.cn/usage/index.html 找到html结构
+
+## 9.1 下载swiper@5.2.1
+
+- `npm i swiper@5.2.1 -S`
+
+- 在.vue文件中引入swiper.js和swiper.css文件
+
+  - ```js
+    // 引入swiper主文件
+    import Swiper from 'swiper'
+    ```
+
+  - ```html
+    <style lang="css" scoped>
+    @import '../../../node_modules/swiper/css/swiper.css';
+    </style>
+    <style lang="scss" scoped>
+    @import '@/assets/scss/Msite.scss';
+    </style>
+    ```
+
+  - 注意swiper.css要引入在所有样式文件的最前面
+
+- 在mounted里面写入代码, 因为只有mounted才能获取到元素
+
+  - ```js
+    	mounted () {
+    		// swiper对象必须在列表数据显示之后创建
+    		new Swiper('.msite_nav_swiper-container', {
+    			// direction: 'vertical', // 垂直切换选项
+    			loop: true, // 循环模式选项
+    
+    			// 如果需要分页器
+    			pagination: {
+    				el: '.swiper-pagination',
+    			}
+    		})
+    		new Swiper('.shop_list_container', {
+    			direction: 'vertical',
+    			slidesPerView: 'auto',
+    			freeMode: true,
+    			scrollbar: {
+    				el: '.swiper-scrollbar',
+    			},
+    			mousewheel: true,
+    		})
+    	},
+    ```
+
+  - 这里用了两种swiper: 一种是传统横向轮播图, 还有一种是竖向内容查看轮播图
+
+    - 横向轮播图
+
+      - ```html
+        <div class="swiper">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">Slide 1</div>
+                <div class="swiper-slide">Slide 2</div>
+                <div class="swiper-slide">Slide 3</div>
+            </div>
+            <!-- 如果需要分页器 -->
+            <div class="swiper-pagination"></div>
+            
+            <!-- 如果需要导航按钮 -->
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-button-next"></div>
+            
+            <!-- 如果需要滚动条 -->
+            <div class="swiper-scrollbar"></div>
+        </div>
+        导航等组件可以放在Swiper容器之外
+        ```
+
+      - 允许给轮播图设置大小
+
+      - ```css
+        .swiper {
+            width: 600px;
+            height: 300px;
+        }  
+        ```
+
+      - 配置
+
+      - ```js
+          var mySwiper = new Swiper ('.swiper', {
+            direction: 'vertical', // 垂直切换选项
+            loop: true, // 循环模式选项
+            
+            // 如果需要分页器
+            pagination: {
+              el: '.swiper-pagination',
+            },
+            
+            // 如果需要前进后退按钮
+            navigation: {
+              nextEl: '.swiper-button-next',
+              prevEl: '.swiper-button-prev',
+            },
+            
+            // 如果需要滚动条
+            scrollbar: {
+              el: '.swiper-scrollbar',
+            },
+          })  
+        ```
+
+    - 纵向内容查看
+
+      - ```html
+        <div class="swiper-container">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                    <p>
+                        lorem55
+                    </p>
+                    <p>
+                        lorem55
+                    </p>
+                </div>
+            </div>
+            <!-- add a scroll bar -->
+            <div class="swiper-scrollbar"></div>
+        </div>
+        ```
+
+      - css配置
+
+      - ```css
+        .swiper-slide{
+            height:auto;
+        }
+        ```
+
+      - js配置
+
+      - ```js
+            var swiper = new Swiper('.swiper-container', {
+              direction: 'vertical',
+              slidesPerView: 'auto',
+              freeMode: true,
+              scrollbar: {
+                el: '.swiper-scrollbar',
+              },
+              mousewheel: true,
+            });
+        ```
+
+
+
+# 10 使用postman测试接口
+
+- 使用postman测试提供的后端文件的地理位置接口
+
+- 在文件里找到的测试地理位置接口, 仅限测试国内地理位置
+
+  - ```js
+    /*
+    根据经纬度获取位置详情
+     */
+    router.get('/position/:geohash', function(req, res) {
+      const {geohash} = req.params
+      ajax(`http://cangdu.org:8001/v2/pois/${geohash}`)
+        .then(data => {
+          res.send({code: 0, data})
+        })
+    })
+    ```
+
+
+
+# 11 封装axios
+

@@ -85,4 +85,29 @@
     }
     ```
 
-  - 
+# 向路由组件传递数据
+
+### 动态路由
+
+- 通过路径传递数据
+
+```js
+children:[{
+	path:'/home/message/detail/:id',
+    component:Home_Message_detail
+}]
+```
+
+- vue模板中发送数据
+
+```html
+<router-link :to="'/home/message/detail/'+num"></router-link>
+// 以/home/message/detail/55 为例
+```
+
+- 在对应的component中接收该数据
+
+```js
+this.$route.params.id
+```
+
