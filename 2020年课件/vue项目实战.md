@@ -884,3 +884,403 @@ Vue.component('Header', Header)
 
 # 11 封装axios
 
+```js
+/* 
+    对axios进行二次封装
+*/
+
+/* 
+    1. 统一处理请求异常
+    2. 异步请求成功的数据不是response,而是response.data
+    3. 对post请求进行urlencoded处理, 而不是使用默认的json方式
+    4. 配置请求超时的时间
+    5. 通过请求头携带token数据
+
+*/
+import axios from 'axios'
+import qs from 'qs'
+const instance = axios.create({
+	headers: { 'content-type': 'application/x-www-form-urlencoded' },
+	timeout: 20000
+})
+
+// 请求拦截器
+instance.interceptors.request.use(
+	config => {
+		console.log('req interceptors')
+		const data = config.data
+		if (data instanceof Object) {
+			config.data = qs.stringify(data)
+		}
+
+		return config
+	},
+	error => {}
+)
+
+// 响应拦截器
+instance.interceptors.response.use(
+	response => {
+		console.log('res interceptors')
+		return response.data
+	},
+	error => {
+		alert('请求出错:' + error.message)
+		return Promise.reject(() => {}) // 返回一个pending状态的promse中断promise链
+	}
+)
+
+export default instance
+
+```
+
+- 在src/ap/ajax.js文件里写入
+
+# 12 测试ajax请求
+
+- 根据服务器里的代码来请求地址
+
+  - ```js
+    router.get('/position/:geohash', function(req, res) {
+      const {geohash} = req.params
+      ajax(`http://cangdu.org:8001/v2/pois/${geohash}`)
+        .then(data => {
+          res.send({code: 0, data})
+        })
+    })
+    ```
+
+  - 服务器开启地址为 `http://localhost:4000`, 也就是说要向`http://localhost:4000/psoition`发送请求才能获取到地址
+
+- 利用已经封装好的axios来发送请求, 在 src/api/index.js 文件中封装请求地址的方法
+
+  - ```js
+    import ajax from './ajax'
+    // 1.根据经纬度获取位置详情
+    export const reqAddress = (longitude, latitude) => ajax(`/position/${latitude},${longitude}`)
+    ```
+
+- 在App.vue文件中发送请求
+
+  - ```js
+    import { reqAddress } from '@/api/index'
+    ```
+
+  - ```js
+    	async mounted () {
+    		const result = await reqAddress('116.368647', '40.10038')
+    		console.log('result', result)
+    	}
+    ```
+
+- 打包文件, 发送失败, 产生跨域问题, 原因如下
+
+  - 在ajax.js文件中, instance创建的baseURL为`http://localhost:4000`
+  - mounted直接发送请求, 请求为`http://localhost:4000/position/lognitude,latitude`
+  - 而客户端的地址是`http://localhost:8080`,由此产生跨域问题
+
+- 配置代理服务器来解决跨域
+
+  - 在ajax.js文件中为baseURL改写
+
+    - ```js
+      const instance = axios.create({
+      	baseURL: '/api', // ajax请求直接访问 http://localhost:8080/api, 开发服务器设置了代理, 删掉/api路径, 并向http://localhost:4000转发
+      	headers: { 'content-type': 'application/x-www-form-urlencoded' }, // 这个不是必须的,处理了数据后会自动修改请求头
+      	timeout: 20000
+      })
+      ```
+
+    - 这样写会直接让客户端从`http://localhost:8080`向`http://localhost:8080/api`发送请求, 不会产生跨域问题
+
+  - 在`vue.config.js`文件中写入
+
+    - ```js
+      	devServer: {
+      		proxy: {
+      			'/api': {
+      				target: 'http://localhost:4000', // 转发的目标地址 http://127.0.0.1:4000/api/search/users
+      				pathRewrite: {
+      					'^/api': '' // 转发请求时去除路径前面的api
+      				},
+      				changeOrigin: true // 如果主机也不相同,必须加上
+      			}
+      		},
+      		historyApiFallback: true
+      	},
+      ```
+
+    - 这个代理的意思是: 如果我的请求地址里带有 /api ,则这个地址是向`http://localhost:4000`发送的, 并且转发的时候删除路径里的`/api`
+
+    - 比如刚才的转发流程:
+
+      - 客户端`http://localhost:8080`发起请求`http://localhost:8080/api/position/longititude,latitude`
+      - 代理服务器观察到路径中有`/api`,于是移花接木路径为`http://localhost:4000/position/longtitude.latitude`, 由于是服务器向服务器发送请求, 因此没有跨域限制
+      - 代理服务器得到请求后再将获得的数据返回, 因此看起就像从`http://localhost:8080`向`http://localhost:4000/api/position`发送请求, 并且成功从`http://localhost:4000/position`访问并获取响应数据
+
+# 13 解决跳转到当前路由的警告
+
+- 即通过`this.$router.replace(url)`跳转路径时. 跳转相同的路径时报错
+- 老师给的方法是判断url是否是当前的路径, 不是的话才跳转
+- 但有的时候希望点击跳转当前路由的时候实现刷新当前页面
+  - 方案一:
+    - window.location=path(当前路径) // 发送一般的请求==>整个页面刷新显示
+
+# 14 使用vuex管理状态数据
+
+- 下载vuex
+
+  - `npm i vuex@3.1.2 -S`
+
+- 创建vuex目录
+
+  - ```
+    action.js
+    getter.js
+    mutations.js
+    mutations-type.js
+    state.js
+    index.js
+    ```
+
+- index.js主文件里引入各个文件, 并创建
+
+  - ```js
+    import Vue from 'vue'
+    import Vuex from 'vuex'
+    // 引入四个配置文件
+    import state from './state'
+    import mutations from './mutations'
+    import actions from './actions'
+    import getters from './getters'
+    
+    Vue.use(Vuex)
+    export default new Vuex.store({
+    	state,
+    	mutations,
+    	actions,
+    	getters
+    })
+    ```
+
+- main.js入口文件里引入管理文件并注册
+
+  - ```js
+    import store from '@/vuex/index'
+    ```
+
+  - ```js
+    new Vue({
+        // 省略一些代码
+        store:store // 注册管理工具
+    })
+    ```
+
+  - 在此之后就可以在各个组件里通过`this.$store`来管理数据了
+
+- 定义state
+
+  - store/state.js
+
+  - ```js
+    export dafault{
+        latitude:40.10038, // 纬度
+        longitude:116.368667, // 经度
+        address:{}, //地址对象信息
+        categorys:[], // 分类数组
+        shops:[], // 商家数组
+    }
+    ```
+
+- 定义mutations-type
+
+  - store/mutations-type.js
+
+  - ```js
+    /* 包含mutations函数名常量 */
+    export const RECEIVE_ADDRESS = 'receive_address'
+    export const RECEIVE_CATEGORYS = 'receive_categorys'
+    export const RECEIVE_SHOPS = 'receive_shops'
+    ```
+
+  - 事实上我暂时不知道这个文件有什么用
+
+- 定义mutations
+
+  - store/mutations.js
+
+  - ```js
+    /* 用于直接更新状态数据方法的对象 */
+    import { RECEIVE_ADDRESS, RECEIVE_CATEGORYS, RECEIVE_SHOPS } from './mutations-type'
+    const mutations = {
+    	/* 直接更新 */
+    	[RECEIVE_ADDRESS](state, address) {
+    		state.address = address
+    	},
+    	[RECEIVE_CATEGORYS](state, categorys) {
+    		state.categorys = categorys
+    	},
+    	[RECEIVE_SHOPS](state, shops) {
+    		state.shops = shops
+    	}
+    }
+    
+    export default mutations
+    ```
+
+  - 这里直接引入了mutations-type.js文件里定义的几个大写常量. 
+
+    - 首先确定一点, 不论这些文件在哪里使用, 这些常量都是不变的
+    - 也就是说我可以在mutations-type里为这些函数写入各种变量来定义直接操作函数
+    - 使用的话是使用this.$store.commit(RECEIVE_ADDRESS)或者this.$store.commit('receive_address')
+      - 其实只是用法的不同, mutations中的函数依然被以字符串`receive_address`命名, 但这个字符串同时也被赋值给了RECEIVE_ADDRESS常量, 我的理解是 因为变量有提示而字符串没有提示, 为了避免书写长字符串出错而创建mutations-type.js文件设定常量 
+
+- 定义getters
+
+  - 暂时还没有用的到的地方
+
+- 定义actions
+
+  - ```js
+    /* 包含用于间接更新状态数据方法的对象 */
+    
+    import { reqAddress, reqCategorys, reqShops } from '@/api/index'
+    import { RECEIVE_ADDRESS, RECEIVE_CATEGORYS, RECEIVE_SHOPS } from './mutations-type'
+    // 这里引入了mutations-type.js文件里定义的常量
+    
+    const actions = {
+    	/* 获取地址信息的异步actions */
+    	async getAddress(ctx) {
+    		const { longitude, latitude } = ctx.state
+    		// 1.发送异步请求
+    		const result = await reqAddress(longitude, latitude)
+    		// 2.请求成功,提交给mutations
+    		if (result.code === 0) {
+    			const address = result.data
+                // ctx.commit([mutations中定义的])
+    			ctx.commit(RECEIVE_ADDRESS, address)
+    		}
+    	},
+    	/* 获取商品信息的异步actions */
+    	async getCategorys(ctx) {
+    		// 1.发送异步请求
+    
+    		const result = await reqCategorys()
+    		// 2.请求成功,提交给mutations
+    		if (result.code === 0) {
+    			const categorys = result.data
+    			ctx.commit(RECEIVE_CATEGORYS, categorys)
+    		}
+    	},
+    	/* 获取商店地址信息的异步actions */
+    	async getShops(ctx) {
+    		// 1.发送异步请求
+    		const result = await reqShops()
+    		// 2.请求成功,提交给mutations
+    		if (result.code === 0) {
+    			const shops = result.data
+    			ctx.commit(RECEIVE_SHOPS, shops)
+    		}
+    	}
+    }
+    export default actions
+    
+    ```
+
+- 在App.vue中发起请求更新数据
+
+  - ```js
+    	async mounted () {
+    		// this.$store.commit(TEST, 'hello world')
+    		// console.log(this.$store)
+    		await this.$store.dispatch('getAddress')
+    		// console.log(this.$store.state.address)
+    	}
+    ```
+
+# 15 复习
+
+## ajax封装
+
+- 统一处理请求异常: 响应拦截器的失败的回调
+- 异步请求成功的数据不是response, 而是response.data: 响应拦截器的成功回调返回response.data
+- 对请求体参数进行urlencoded处理, 而不是使用默认的json方式(后台接口不支持): 请求拦截器中将data对象装换为urlencoded字符串(使用qs库 , Qs.stringify(config.params))
+- 解决ajax的跨域问题
+  - 配置代理: vue.config.js中配置 devServer.proxy
+  - 代理服务器: webpack-dev-server => http-proxy-middleware
+  - 作用: 针对前台虚拟路径的特定请求转发请求操作
+
+## vuex编码
+
+- 设计state: 从后台获取的数据
+- 实现actions: 
+  - 定义异步action: async/await
+  - 流程: 发ajax获取数据, commit 给mutation
+- 实现mutation: 定义直接更新state数据的函数
+- 实现index.js: 创建store对象
+- main.js: 配置store
+- 组件中:
+  - 分发: this.$store.dispatch('actionName',data)
+  - 提交: this.$store.commit('mutationName',data)
+  - 读取: mapState() / mapGetters()
+
+## 关于面试聊什么
+
+- 技术方面: 原型\闭包\作用域\执行上下文\异步(promise,async,await)\事件循环机制(宏任务/微任务)\ajax(ajax跨域, axios,axios的二次封装,token) 大概十分钟
+- vuex
+
+
+
+# 16 异步显示当前地址
+
+- 拦截器就是promise
+
+- 前面已经实现打开向服务器发送请求然后获取地址数据, 并由vuex更新到state
+
+- 在Msite.vue中定义vuex的state数据
+
+  - ```js
+    // 1. 从vuex引入mapState
+    import {mapState} from 'vuex'
+    ```
+
+  - ```js
+    // 2. 在computed中定义具体的数据
+    computed:{
+        ...mapState(['address'])
+    }
+    ```
+
+  - ```html
+    // 3. 在模板的<Header>中进行数据绑定
+    <Header :title="address.name||'定位中'"></Header>
+    ```
+
+- 视频里没有说的部分, 我注意到标题被用省略号省略了, 我猜想可能是lodash插件
+
+- 在.vue文件中使用
+
+  - `import {truncate} from 'lodash'`
+
+  - ```js
+    methods:{
+        truncate
+    }
+    ```
+
+  - ```html
+    <Header :title="truncate(address.name,{length:10})||'定位中'"></Header>
+    ```
+
+
+
+## 17 异步显示商家列表
+
+- ```js
+  mounted(){
+      this.$store.dispatch('getCateorys')
+      this.$store.dispatch('getShop')
+  }
+  ```
+
+- 请求路径: `https://fuss10.elemecdn.com`
