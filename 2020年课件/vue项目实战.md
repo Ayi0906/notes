@@ -1272,15 +1272,670 @@ export default instance
     <Header :title="truncate(address.name,{length:10})||'定位中'"></Header>
     ```
 
-
-
-## 17 异步显示商家列表
+# 17 异步显示商家列表
 
 - ```js
+  // 在App.vue中写下:
   mounted(){
       this.$store.dispatch('getCateorys')
       this.$store.dispatch('getShop')
   }
   ```
-
+  
 - 请求路径: `https://fuss10.elemecdn.com`
+
+- 我在按照视频中使用Swiper来写的时候出现了接收响应数据在mounted执行new Swiper()之后, 并且无法更新视图的bug
+
+- 搜索到有一个vue-awesome-swiper 组件, 现在随着Vue3已经被弃用了, 但是用来做vue2还是可以的
+
+- 然后使用vue-awesome-swiper改写, 这一段简略掉
+
+# 18 异步显示轮播分类_一维数组转二维数组
+
+- ```js
+  categorys.forEach((item,index,arr)=>{
+      if(smallArr.length===0){
+          bigArr.push(smallArr)
+      }
+      
+      smallArr.push(item)
+      
+      if(smallArr.length===8){
+          smallArr=[]
+      }
+  })
+  ```
+
+
+
+# 19 使用lodash简化编码_实现按需引入打包
+
+- 全部引入
+
+  - ```js
+    import _ from 'lodash'
+    ```
+
+- _.chunk(arr,{size:number}) 快速生成二位数组
+
+  - ```js
+    return _.chunk(categorys,8)
+    ```
+
+- 按需引入
+
+  - ```
+    import chunk from 'lodash/chunk'
+    ```
+
+  - 但是我使用`import {truncate} from 'lodash'`也可以
+
+# 20 解决swiper轮播bug
+
+- 就是我前面发现的bug, 数据在new Swiper()之后才收到
+
+- 我在前面使用vue-awesome-swiper解决了
+
+- 使用watch解决:
+
+  - ```js
+    watch:{
+        /* 
+        	1. 更新数据
+        	2. 立即同步调用监视回调函数
+        	3. 异步更新界面
+        */
+        categorys(){ // categorys变化: [] ===> [....]
+            setTimeout(()=>{
+                new Swiper(this.$refs.sc1,{ // 
+                    loop:true,
+                    pagination:{
+                        el:'.swiper-pagination'
+                    }
+                })
+            },0)
+        }
+    }
+    ```
+
+- 使用this.$nextTick()改写(方式一)
+
+  - ```js
+    watch:{
+        categorys(){
+            this.$nextTick(()=>{
+                new Swiper(this.$refs.sc1,{
+                    loop:true,
+                    pagination:{
+                        el:'.swiper-pagination'
+                    }
+                })
+            })
+        }
+    }
+    ```
+
+- 方式二: 使用callback+ nextTick
+
+  - ```js
+    // 在定义的时候就设置回调函数
+    	/* 获取商品信息的异步actions */
+    	async getCategorys(ctx, cb) {
+    		// 1.发送异步请求
+    
+    		const result = await reqCategorys()
+    		// 2.请求成功,提交给mutations
+    		if (result.code === 0) {
+    			const categorys = result.data
+    			ctx.commit(RECEIVE_CATEGORYS, categorys) // 同步修改state中的数据
+    			typeof cb === 'function' && cb() // 记得传入的时候用箭头函数, 否则会报this是undefined的错误, 因为严格模式下报的是undefined, 非严格模式下是window对象
+    		}
+    	},
+    ```
+
+  - ```js
+    // 在发起异步获取数据的时候传入设定的回调函数 (App.vue)
+    	async created () {
+    		// this.$store.commit(TEST, 'hello world')
+    		// console.log(this.$store)
+    		this.$store.dispatch('getAddress')
+    		this.$store.dispatch('getCategorys',()=>{ // 这里必须用箭头函数, 因为不用的话会报this是undefined的错误
+                this.$nextTick(()=>{
+                    new Swiper() 
+                })
+            })
+    		this.$store.dispatch('getShops')
+    
+    		// console.log(this.$store.state.address)
+    	}
+    ```
+
+- 方式三: 利用dispatch返回的promise在数据更新且界面更新之后才成功
+
+  - ```js
+    this.$store.dispatch('getAddress')
+    this.$store.dispatch('getShops')
+    await this.$stroe.dispatch('getCategorys')
+    new Swiper(....)
+    ```
+
+- 面试: 从问题的产生, 到问题的解决来解说
+
+# 21 请求loading提示_mintui
+
+- 先下载mint-ui和babel-plugin-comonent
+
+  - ```json
+    	"dependencies": {
+    		"axios": "^0.26.1",
+    		"babel-plugin-component": "^1.1.1",
+    		"core-js": "^3.6.5",
+    		"lib-flexible": "^0.3.2",
+    		"lodash": "^4.17.21",
+    		"mint-ui": "^2.2.13",
+    		"postcss-px2rem": "^0.3.0",
+    		"qs": "^6.10.3",
+    		"swiper": "^5.2.1",
+    		"vue": "^2.6.11",
+    		"vue-awesome-swiper": "^4.1.1",
+    		"vue-router": "^3.5.3",
+    		"vuex": "^3.1.2"
+    	},
+    ```
+
+- 配置babel.config.js
+
+  - ```js
+    module.exports = {
+        presets: ['@vue/cli-plugin-babel/preset'],
+        plugins: [
+            [
+                'babel-plugin-component',
+                {
+                    libraryName: 'mint-ui', // 针对mint-ui库实现按需打包
+                    style: true, // 自动打包对应css
+                },
+            ],
+        ],
+    }
+    ```
+
+- 在ajax.js中的请求拦截器和响应拦截器中设置加载动画
+
+  - ```js
+    import { Indicator } from 'mint-ui'
+    
+    // 请求拦截器
+    instance.interceptors.request.use(
+    	config => {
+    		//显示请求loading
+    		Indicator.open()
+    		console.log('req interceptors')
+    		const data = config.data
+    		if (data instanceof Object) {
+    			config.data = qs.stringify(data)
+    		}
+    
+    		return config
+    	},
+    	error => {
+    		return Promise.reject(() => {})
+    	}
+    )
+    
+    // 响应拦截器
+    instance.interceptors.response.use(
+    	response => {
+    		// 隐藏请求loading
+    		Indicator.close()
+    		console.log('res interceptors')
+    		return response.data
+    	},
+    	error => {
+    		alert('请求出错:' + error.message)
+    		return Promise.reject(() => {}) // 返回一个pending状态的promse中断promise链
+    	}
+    )
+    ```
+
+
+
+# 22 login组件_前台交互效果
+
+- ```
+  login纯前台交互效果
+  	1. 两种登录方式的切换
+  	2. 手机号11为数字验证, 验证完毕后才允许发送验证码
+  	3. 点击发送验证码后有一个"验证码已发送(倒计时行xx秒)"的效果
+  	4. 密码可见性的切换
+  	5. 多种语言的切换(国际化) // 以后做
+  ```
+
+- input内的开关样式参见笔记
+
+- `:focus-within`
+
+# 23 复习
+
+- swiper轮播的问题
+  - swiper在实际开发时会遇到哪些问题
+  - 怎么保证swiper的发起请求-->获取数据-->渲染页面的顺序
+
+# 24 使用vee-validate插件进行表单验证
+
+1. 手机号验证规则: 必须, 长度为11位数字; 没有填写的时候
+
+# 25 login-组件-倒计时
+
+
+
+# 26 star组件
+
+- 建立components/Star/Star.vue
+
+- 写好模板
+
+- 写好样式
+
+- 接收score与size两个属性, 在Msite使用24的图片
+
+  - 遇见问题: `:src`无法加载拼接字符地址
+
+    - ```html
+      		<img :src="require(`./star/star${size}_on@2x.png`)" alt="" v-for="(star,index) in Math.floor(score)" :key="'star_on'+index">
+        		<img :src="require(`./star/star${size}_half@2x.png`)" alt="" v-for="(star,index) in Math.ceil(score)-Math.floor(score)" :key="'star_half'+index">
+        		<img :src="require(`./star/star${size}_off@2x.png`)" alt="" v-for="(star,index) in 5-Math.ceil(score)" :key="'star_off'+index">
+      ```
+
+    - 使用`require(拼接字符串地址)`
+
+# 27 login组件_列出所有前后台交互功能
+
+- 一次性图形验证码, 点击可以切换(就是图形验证码)
+- 一次性短信验证码
+- 短信登录请求
+- 密码登录请求
+- 自动登录请求
+- 退出登录
+
+
+
+# 28 login组件_动态显示图形验证码
+
+- 请求url `http://localhost:4000/captcha`
+
+- 或者利用代理服务器 `src="/api/captcha"`, 仅限于代理服务器, 因为生产环境下是无法识别/api路径的
+
+- 点击刷新验证码
+
+  - 首先图片验证码写为: `<img src="/api/captcha">` 或者 `<img src="http://localhost:4000/captcha">`
+
+  - 然后就可以在加载的时候加载图片了
+
+  - 刷新图片则需要刷新img的src的值.
+
+    - ```html
+      <img ref="captcha" src="http://localhost:4000/captcha" alt="captcha" @click="updateCaptcha">
+      ```
+
+    - ```js
+      		updateCaptcha () {
+        			this.$refs.captcha.src = 'api/captcha?time=' + Date.now()
+        		}
+      ```
+
+    - 在url上加上时间, 欺骗浏览器该url已经改变. 使得浏览器重新加载图片
+
+# 29 短信验证码_容联云通信
+
+- 容联云通信
+  - 注册后新用户有800条左右的免费
+  
+  - 注册后先添加测试号码
+  
+  - 然后把`ACCOUNT_SID`, `AUTH_TOKEN`, `AppID` 复制到 sms_util.js
+  
+    - 这个文件在服务器文件里找到并替换, 是后端的活
+  
+    
+
+
+
+# 30 发送短信验证码
+
+- 在api/index.js文件中写入
+
+  - ```js
+    // 4. 发送短信验证按码
+    /* 
+      发送短信验证码
+      请求url: http://localhost:4000/sendcode?phone=13716962779  get方式 
+      成功
+        {
+          "code": 0,
+        }
+      失败
+        {
+    	    "code": 1, 
+          msg: '短信验证码发送失败'
+        }
+    */
+    export const reqSendCode = phone => {
+    	ajax('/sendcode', { params: { phone } }) // get请求
+    }
+    ```
+
+- 在Login.vue中写入相应的代码
+
+  - ```js
+    		sendCode () {
+      			// 1.只要能够点击, 代表手机号符合格式且不在15秒, 直接发送请求
+      			reqSendCode(this.phone)
+      
+      			// 2.执行倒计时15s, 并修改文本
+      			this.isSendCodeAlrady = true // 已发送请求, 15s内禁止再次发送
+      			let time = 15
+      			this.verificationMsg = `倒计时15秒`
+      			let timer = setInterval(() => {
+      				if (time === 0) {
+      					clearInterval(timer)
+      					timer = null
+      					this.isSendCodeAlrady = false // 允许发送验证码
+      					this.verificationMsg = `发送验证码`
+      					return
+      				}
+      				time--
+      				this.verificationMsg = `倒计时${time}秒`
+      			}, 1000)
+      		},
+    ```
+
+- 
+
+
+
+# 31 发送登录请求
+
+
+
+# 32 登录成功后保存user和token
+
+- 先在vuex的state.js中创建user和token属性用作登录后用户的保存信息
+
+  - ```js
+    export dafault {
+        user:{}, // 用户信息对象
+        token:''   // 当前用户登录的标记
+    }
+    ```
+
+- 在actions.js中写入保存用户信息的函数
+
+  - ```js
+    saveUser({ commit }, user) {
+    	const token = user.token
+    	// 保存token到local
+    	localStorage.setItem('token_key', token)
+    	delete user.token // 删掉token, 还有phone/_id/_v 或者 name/_id , user对象里面没必要继续存token
+    	// console.log(user) {phone:'', _id:''}
+    	console.log('保存的user:', user)
+    	commit('receive_user', user)
+    	commit('receive_token', token)
+    }
+    ```
+
+- 在mutations.js中
+
+  - ```js
+    	receive_token(state, token) {
+    		state.token = token
+    	},
+    	receive_user(state, user) {
+    		state.user = user
+    	},
+    ```
+
+  - 
+
+
+# 33 自动登录
+
+- 客户端在发起请求阶段, 通过 axios 发送响应, 在请求拦截器中查看本地是否有 token , 如果有的话就将 token 放进请求头一并发送, 第一次发送没有token
+
+  - ```js
+    const token = localStorage.getItem('token_key') // token保存在localStorage之中
+    if (token) {
+    	config.headers['Authorization'] = token
+    }
+    ```
+
+- 服务器在路由 /login_sms 与 /login_pwd  成功后都会通过查到的用户的_id和 createToken(user._id)创建token, 并通过 res.send 返回给客户端
+
+  - ```js
+    var jwt = require('jsonwebtoken')
+    
+    module.exports = function (id) {
+    	// 根据用户的id值生成token
+    	// 为方便测试，有效期设置为 10s 进行监测，普通生产情况下可以设置为更长的时间 
+    	const token = jwt.sign({ id }, 'secret', { expiresIn: '7 days' })
+    	return token;
+    }
+    ```
+
+  - 
+
+- 客户端接收到返回的用户数据后, 进行token的保存, 将其保存在state之中
+
+  - ```js
+    // Login.vue
+    this.saveUser(userInfo) // 保存user对象 , 它包括phone/token/_v/_id 或者 name/token/_id
+    ```
+
+  - ```js
+    // actions.js
+    saveUser({ commit }, user) {
+    	const token = user.token
+    	// 保存token到local
+    	localStorage.setItem('token_key', token) // 本地保存token
+    	delete user.token // 删掉token, 还有phone/_id/_v 或者 name/_id 两个属性
+    	// console.log(user) {phone:'', _id:''}
+    	console.log('保存的user:', user)
+    	commit('receive_user', user)
+    	commit('receive_token', token)
+    },
+    ```
+
+- 关闭客户端, 再次进入时需要自动登录, 即在actions.js中配置 autoLogin 方法
+
+  - ```js
+    // api/index.js
+    export const reqAutoLogin = () => ajax('/auto_login')
+    ```
+
+  - ```js
+    // actions.js
+    async autoLogin({ commit, state }) {
+    	// 发送自动登录的请求
+    	if (state.token && !state.user._id) {
+    		// 必须要有token且没有user信息
+    		const result = await reqAutoLogin()
+    		if (result.code === 0) {
+    			const user = result.data // 没有token
+    			commit('receive_user', user)
+    		}
+    	} else {
+    		return console.log('不存在t')
+    	}
+    }
+    ```
+
+  - ```js
+    // App.vue
+    async created () {
+    	this.$store.dispatch('getAddress')
+    	this.$store.dispatch('getCategorys')
+    	this.$store.dispatch('getShops')
+    	this.$store.dispatch('autoLogin')
+    }
+    ```
+
+  - ```js
+    // 服务器 server.js
+    router.get('/auto_login', function (req, res) {
+    	// 得到请求头中的token
+    	const token = req.headers['authorization']
+    
+    	// 如果请求头中没有token, 直接返回
+    	if (!token) {
+    		return res.send({ code: 1, msg: '请先登陆' })
+    	}
+    
+    	// 解码token, 如果失败或过了有效期, 返回401
+    	const decoded = jwt.decode(token, 'secret')
+    	if (!decoded || decoded.exp < Date.now() / 1000) {
+    		res.status(401)
+    		return res.json({ message: 'token过期，请重新登录' })
+    	}
+    
+    	// 根据解码出的用户id, 查询得到对应的user, 返回给客户端
+    	const userId = decoded.id
+    	UserModel.findOne({ _id: userId }, _filter).then(user => {
+    		res.send({ code: 0, data: user })
+    	})
+    })
+    ```
+
+  - 服务器通过解码token获得`_id`值, 然后通过`_id`查询数据库, 查询成功有这个用户就返回`{ code: 0, data: user }`
+
+# 34 token处理
+
+## token的流程简介
+
+1. 客户端发送包含用户名和密码的请求
+2. 服务器校验用户名和密码成功生成token
+3. 服务器返回的响应信息包含token
+4. 客户端将接收的token保存在localStorage中
+5. 客户端再次向服务器发起请求时, 不携带用户名和密码, 携带token在请求头中
+6. 服务器校验token, 成功返回请求的用户数据, 不成功返回错误码
+
+## 实现用户首次打开页面呈现Login页面, 登录成功后才跳转/Msite, 下次打开时, 校验token, 校验成功打开/msite, 校验不成功( 过期或者没有登录 )打开Login
+
+1. 对于服务器的 /index_category ,和 /shops路由, 检查token, 即调用 checkToken. token解析错误, 没有token, token过期会返回401状态码
+
+2. 在响应拦截器中, 收到401状态码进入错误处理, 跳转到 /login 页面
+
+   1. ```js
+      import router from '@/router'
+      import Vue from 'vue'
+      import { Toast } from 'vant'
+      ```
+
+   2. ```js
+      // 响应拦截器
+      instance.interceptors.response.use(
+      	response => {
+      		// 隐藏请求loading
+      		// Indicator.close()
+      		store.commit('changeLoadingStatus', false)
+      		return response.data
+      	},
+      	error => {
+      		// 取消loading
+      		store.commit('changeLoadingStatus', false)
+      		// 如果响应状态码是401 自动跳转/login页面
+      		if (error.response.status === 401) {
+      			router.replace('/login')
+      			Toast.fail('登录失效, 请重新登录')
+      		} else {
+      			Toast.fail('错误, ' + error.message)
+      		}
+      
+      		// alert('请求出错:' + error.message)
+      		return Promise.pending(() => {}) // 返回一个pending状态的promse中断promise链
+      	}
+      )
+      ```
+
+   3. 不足之处, 不存在token的情况下不应该向这两个服务器发起这两个路由的请求, 没必要, 直接跳转/login
+
+# 35 请求相关错误处理
+
+## 分辨哪些请求需要token, 哪些不需要token
+
+- 在相应的路由中设置请求头
+
+- ```js
+  // api/index.js
+  
+  // 1.根据经纬度获取位置详情
+  export const reqAddress = (longitude, latitude) =>
+  	ajax(`/position/${latitude},${longitude}`, {
+  		headers: {
+  			needCheck: true
+  		}
+  	})
+  
+  // 2. 获取食品分类列表
+  export const reqCategorys = () =>
+  	ajax('/index_category', {
+  		headers: {
+  			needCheck: true
+  		}
+  	})
+  ```
+
+- 在请求拦截器中获取请求头
+
+- ```js
+  instance.interceptors.request.use((config) => {
+  
+    // 处理Post请求参数(从对象转换为urlencoding)
+    if (config.method.toUpperCase()==='POST' && config.data instanceof Object) {
+      config.data = qs.stringify(config.data) // username=tom&pwd=123
+    }
+  
+    // 获取当前state.js中保存的token
+    const token = store.state.user.token
+    // 只要浏览端存在token就携带给服务端
+    if (token) {
+      config.headers['Authorization'] = token
+    } else {
+      // 如果没有token但请求必须要token, 则不发请求, 抛出错误直接进入到响应拦截器中
+      if (config.headers.checkToken) {
+        throw new Error('没有token, 不发请求')
+      }
+    }
+  
+    return config
+  })
+  ```
+
+- 在响应拦截器拦截这个错误
+
+```js
+// 只有在发了请求才会有error.response, 没发请求只有error
+
+	error => {
+		// 取消loading
+		store.commit('changeLoadingStatus', false)
+		// 发了请求的错误
+		const response = error.response
+
+		// 如果响应状态码是401 自动跳转/login页面
+		if (error.response.status === 401) {
+			router.replace('/login')
+			Toast.fail(error.response.data.message || `登录失败, 请重新登录`)
+		} else {
+			Toast.fail('错误, ' + error.message)
+		}
+
+		// alert('请求出错:' + error.message)
+		return Promise.pending(() => {}) // 返回一个pending状态的promise中断promise链
+	}
+```
+
+
+
+# 36 自动登录思路梳理
+
+1. 所有请求都必须检查请求头的needCheckToken请求头的值, 如果该值为true, 那么需要检查
