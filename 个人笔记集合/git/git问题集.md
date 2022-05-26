@@ -47,3 +47,17 @@
     - `i`键是输入,`:wq`是退出
 
   - 再次执行`ssh -T git@github.com`查看是否连接成功
+
+
+
+# 2 
+
+```
+ssh: Could not resolve hostname ssh.github.com: Name or service not known
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+```
+
+- 检查发现github根本连不上
